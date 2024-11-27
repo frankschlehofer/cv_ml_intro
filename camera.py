@@ -34,6 +34,31 @@ def write(hand_landmarks):
 
     return True
 
+def clear(hand_landmarks):
+    """
+    Checks if all fingertips (index, middle, ring, pinky) are close to the thumb tip.
+    """
+    # Fingertip indices
+    thumb_tip = 4
+    other_fingertips = [8, 12, 16, 20]  # Index, Middle, Ring, Pinky
+
+    # Get thumb tip position
+    thumb = hand_landmarks.landmark[thumb_tip]
+
+    # Check distances from each fingertip to the thumb tip
+    for idx in other_fingertips:
+        fingertip = hand_landmarks.landmark[idx]
+        distance = np.sqrt(
+            (thumb.x - fingertip.x) ** 2 +
+            (thumb.y - fingertip.y) ** 2 +
+            (thumb.z - fingertip.z) ** 2
+        )
+        print(f"Distance from thumb to fingertip {idx}: {distance}")  # Debugging
+        if distance > 0.05:  # Threshold (adjust as needed)
+            return False
+    print("ever?")
+    return True
+
 def interpolate_points(p1, p2, num_points=10):
     # Linearly interpolate between two points
     x_values = np.linspace(p1[0], p2[0], num_points, dtype=int)
@@ -92,6 +117,9 @@ while True:
                 shapes[-1].append((savedx, savedy))
             else:
                 start_new_shape = True
+            if clear(hand_landmarks):
+                print("HEHEHEH")
+                shapes.clear()
 
     for shape in shapes:
         for i in range(1, len(shape)):
