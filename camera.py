@@ -53,17 +53,10 @@ def clear(hand_landmarks):
             (thumb.y - fingertip.y) ** 2 +
             (thumb.z - fingertip.z) ** 2
         )
-        print(f"Distance from thumb to fingertip {idx}: {distance}")  # Debugging
+    
         if distance > 0.05:  # Threshold (adjust as needed)
             return False
-    print("ever?")
     return True
-
-def interpolate_points(p1, p2, num_points=10):
-    # Linearly interpolate between two points
-    x_values = np.linspace(p1[0], p2[0], num_points, dtype=int)
-    y_values = np.linspace(p1[1], p2[1], num_points, dtype=int)
-    return list(zip(x_values, y_values))
 
 
 persistent_points = []
@@ -118,7 +111,6 @@ while True:
             else:
                 start_new_shape = True
             if clear(hand_landmarks):
-                print("HEHEHEH")
                 shapes.clear()
 
     for shape in shapes:
@@ -131,7 +123,6 @@ while True:
     key = cv2.waitKey(1) & 0xFF
     if key == ord('c'):  # Press 'c' to clear points
         shapes.clear()
-        print("Points cleared")
     elif key == ord('q'):  # Quit program
         break
 
