@@ -1,15 +1,49 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+from tensorflow.keras.models import load_model
 
-# Step 1: Access the default camera
+# Access the default camera
 cap = cv2.VideoCapture(0)
 
+if not cap.isOpened():
+    print("Cannot Open Camera")
+    exit()
+
+# Setup hand detection
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
 mp_drawing = mp.solutions.drawing_utils
 
-# Function to check if hand is making a fist
+# Load model
+model = load_model("digit_recognizer.h5")
+
+# ROI coordinates (adjust as needed)
+roi_x_start, roi_y_start = 1000, 300  # Top-left corner of the ROI
+roi_width, roi_height = 600, 600     # Width and height of the ROI
+
+# Function to preprocess the ROI for prediction
+def preprocess_roi(frame):
+    roi = frame[roi_y_start:roi_y_start + roi_height, roi_x_start:roi_x_start + roi_width]
+
+    # Resize to 28x28
+    roi_resized = cv2.resize(roi, (28, 28))
+
+    # Convert to grayscale
+    if len(roi_resized.shape) == 3:  # Only convert if it's in BGR
+        roi_gray = cv2.cvtColor(roi_resized, cv2.COLOR_BGR2GRAY)
+    else:
+        roi_gray = roi_resized
+
+    # Normalize to [0, 1]
+    roi_normalized = roi_gray.astype('float32') / 255.0
+    
+    # Reshape for the model input
+    roi_normalized = np.expand_dims(roi_normalized, axis=[0, -1])  # (1, 28, 28, 1)
+
+    return roi_normalized
+
+# Function to check if lines should be drawn, point with pointer finger and pinch thumb and middle finger together
 def write(hand_landmarks):
     # Define fingertip and base indices for fingers
     fingertip_indices = [4, 8, 12, 16, 20]  # Thumb, Index, Middle, Ring, Pinky
@@ -34,6 +68,7 @@ def write(hand_landmarks):
 
     return True
 
+# Function to clear the drawings by pinch all 5 fingers together
 def clear(hand_landmarks):
     """
     Checks if all fingertips (index, middle, ring, pinky) are close to the thumb tip.
@@ -54,7 +89,7 @@ def clear(hand_landmarks):
             (thumb.z - fingertip.z) ** 2
         )
     
-        if distance > 0.05:  # Threshold (adjust as needed)
+        if distance > 0.04:  # Threshold (adjust as needed)
             return False
     return True
 
@@ -63,9 +98,7 @@ persistent_points = []
 shapes = [[]]
 start_new_shape = True
 
-if not cap.isOpened():
-    print("Cannot Open Camera")
-    exit()
+
 
 while True:
     # Step 2: Capture frame-by-frame
@@ -75,6 +108,13 @@ while True:
         break
 
     frame = cv2.flip(frame, 1)
+
+    # Introduce frame to draw within for model prediction
+    cv2.rectangle(frame, 
+                  (roi_x_start, roi_y_start), 
+                  (roi_x_start + roi_width, roi_y_start + roi_height), 
+                  (255, 0, 0), 2)  # Blue rectangle with thickness 2
+    
     # Convert the frame to RGB (MediaPipe works with RGB images)
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -115,7 +155,18 @@ while True:
 
     for shape in shapes:
         for i in range(1, len(shape)):
-            cv2.line(frame, shape[i - 1], shape[i], color=(255, 0, 0), thickness=2)
+            cv2.line(frame, shape[i - 1], shape[i], color=(0, 0, 0), thickness=20)
+
+
+    # Preprocess ROI and predict
+    processed_roi = preprocess_roi(frame)
+    cv2.imshow('Processed frame', processed_roi.reshape(28, 28) * 255)
+    prediction = model.predict(processed_roi)
+    predicted_digit = np.argmax(prediction)
+
+    # Display the prediction
+    cv2.putText(frame, f"Predicted: {predicted_digit}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
 
     # Step 3: Display the current frame
     cv2.imshow('Camera Feed', frame)
