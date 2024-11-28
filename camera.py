@@ -20,7 +20,7 @@ model = load_model("digit_recognizer.h5")
 
 # ROI coordinates (adjust as needed)
 roi_x_start, roi_y_start = 1000, 300  # Top-left corner of the ROI
-roi_width, roi_height = 600, 600     # Width and height of the ROI
+roi_width, roi_height = 400, 400     # Width and height of the ROI
 
 # Function to preprocess the ROI for prediction
 def preprocess_roi(frame):
@@ -160,12 +160,12 @@ while True:
 
     # Preprocess ROI and predict
     processed_roi = preprocess_roi(frame)
-    cv2.imshow('Processed frame', processed_roi.reshape(28, 28) * 255)
+    # cv2.imshow('Processed frame', processed_roi.reshape(28, 28) * 255)
     prediction = model.predict(processed_roi)
     predicted_digit = np.argmax(prediction)
 
     # Display the prediction
-    cv2.putText(frame, f"Predicted: {predicted_digit}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    cv2.putText(frame, f"Predicted: {predicted_digit}", (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 3)
 
 
     # Step 3: Display the current frame
