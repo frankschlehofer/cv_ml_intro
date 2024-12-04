@@ -12,3 +12,6 @@ Tools Used:
 - OpenCV for camera capture
 - MediaPipe for all hand tracking and image overlays
 
+Number Recognition Model trained on MNIST data.
+- Model needs more work, very innaccurate when predicting drawn numbers.
+
